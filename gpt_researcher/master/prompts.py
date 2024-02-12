@@ -1,15 +1,16 @@
 from datetime import datetime
 
 
-def generate_search_queries_prompt(question, max_iterations=3):
+def generate_search_queries_prompt(question, max_iterations=20):
     """ Generates the search queries prompt for the given question.
     Args: question (str): The question to generate the search queries prompt for
     Returns: str: The search queries prompt for the given question
     """
 
-    return f'Write {max_iterations} google search queries to search online that form an objective opinion from the following: "{question}"' \
+    return f'Provide as many possible upto {max_iterations} google search queries to search online, that help form an objective opinion for the topic: "{question}"' \
+           f'These search queries must cover all aspects like what, why, how, who and comparisons/alternatives/best for the given topic. ' \
            f'Use the current date if needed: {datetime.now().strftime("%B %d, %Y")}.\n' \
-           f'You must respond with a list of strings in the following format: ["query 1", "query 2", "query 3"].'
+           f'You must respond with a list of strings in the following format: ["query 1", "query 2", "query 3", ...].'
 
 
 def generate_report_prompt(question, context, report_format="apa", total_words=1000):
@@ -56,6 +57,48 @@ def generate_resource_report_prompt(question, context, report_format="apa", tota
            'The report should have a minimum length of 700 words.\n' \
             'You MUST include all relevant source urls.'
 
+
+def generate_outline_generator_prompt(topic, context, report_format="apa", total_words=50000):
+    """Generates the content outline prompt for the given topic and research summary.
+
+    Args:
+        topic (str): The topic to generate the content outline prompt for.
+        context (str): The research summary to generate the outline prompt for.
+
+    Returns:
+        str: The content outline prompt for the given topic and research summary.
+    """
+    return f'"""{context}"""\n\nBased on the above information, generate a content outline for the following' \
+           f' topic: "{topic}". The outline should provide a detailed analysis of given topic' \
+           ' explaining all aspects like what, why, how and who.\n' \
+           'Focus on the relevance, reliability, and significance of each source of information.\n' \
+           'Ensure that the outline is well-structured, informative, in-depth, and follows Markdown syntax.\n' \
+           'Include relevant facts, figures, and numbers whenever available.\n' \
+           'The outline should have a minimum length of 700 words.\n' \
+           'You MUST include all relevant source urls.'
+
+
+def generate_article_generator_prompt(topic, context, report_format="apa", total_words=50000):
+    """Generates the Artcile prompt for the given topic and research summary.
+
+    Args:
+        topic (str): The topic to generate the article prompt for.
+        context (str): The research summary to generate the article prompt for.
+
+    Returns:
+        str: The article prompt for the given topic and research summary.
+    """
+    return f'"""{context}"""\n\nBased on the above information, write a detailed article(in {total_words} words) on the following' \
+           f' topic: "{topic}". The article should provide a detailed analysis of given topic' \
+           ' explaining what, why, how, who and comparison/alternatives aspects of topic.\n' \
+           'Focus on the relevance, reliability, and significance of each source of information.\n' \
+           'Ensure that the article is user engaging, well-structured, informative, in-depth, and follows Markdown syntax.\n' \
+           'Include relevant facts, figures, and numbers whenever available.\n' \
+           'You MUST include all relevant source urls for cross validation of information.' \
+           'You must provide an SEO optimized title and meta description for this article as well.'
+           # 'The article must have a minimum length of 1000 words.\n' \
+
+
 def generate_custom_report_prompt(query_prompt, context, report_format="apa", total_words=1000):
     return f'"{context}"\n\n{query_prompt}'
 
@@ -79,6 +122,8 @@ def get_report_by_type(report_type):
         'research_report': generate_report_prompt,
         'resource_report': generate_resource_report_prompt,
         'outline_report': generate_outline_report_prompt,
+        'outline_generator': generate_outline_generator_prompt,
+        'article_generator': generate_article_generator_prompt,
         'custom_report': generate_custom_report_prompt
     }
     return report_type_mapping[report_type]
@@ -111,6 +156,7 @@ def auto_agent_instructions():
         }
     """
 
+
 def generate_summary_prompt(query, data):
     """ Generates the summary prompt for the given question and text.
     Args: question (str): The question to generate the summary prompt for
@@ -118,7 +164,7 @@ def generate_summary_prompt(query, data):
     Returns: str: The summary prompt for the given question and text
     """
 
-    return f'{data}\n Using the above text, summarize it based on the following task or query: "{query}".\n If the ' \
+    return f'{data}\n Using the above text, summarize(in 10000 words) it based on the following task or query: "{query}".\n If the ' \
            f'query cannot be answered using the text, YOU MUST summarize the text in short.\n Include all factual ' \
            f'information such as numbers, stats, quotes, etc if available. '
 
