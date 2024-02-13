@@ -92,7 +92,7 @@ async def get_sub_queries(query, agent_role_prompt, cfg):
         messages=[
             {"role": "system", "content": f"{agent_role_prompt}"},
             {"role": "user", "content": generate_search_queries_prompt(query, max_iterations=max_research_iterations)}],
-        temperature=0,
+        temperature=0.5,
         llm_provider=cfg.llm_provider
     )
     sub_queries = json.loads(response)
@@ -142,7 +142,7 @@ async def summarize(query, content, agent_role_prompt, cfg, websocket=None):
         return url, summary
 
     # Function to split raw content into chunks of 10,000 words
-    def chunk_content(raw_content, chunk_size=10000):
+    def chunk_content(raw_content, chunk_size=20000):
         words = raw_content.split()
         for i in range(0, len(words), chunk_size):
             yield ' '.join(words[i:i+chunk_size])
@@ -193,7 +193,6 @@ async def summarize_url(query, raw_data, agent_role_prompt, cfg):
     except Exception as e:
         print(f"{Fore.RED}Error in summarize: {e}{Style.RESET_ALL}")
     return summary
-
 
 
 async def generate_report(query, context, agent_role_prompt, report_type, websocket, cfg):

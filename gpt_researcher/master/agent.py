@@ -9,7 +9,7 @@ class GPTResearcher:
     """
     GPT Researcher
     """
-    def __init__(self, query, report_type="research_report", source_urls=None, config_path=None, websocket=None):
+    def __init__(self, query, report_type="research_report", task_type='research', source_urls=None, config_path=None, websocket=None):
         """
         Initialize the GPT Researcher class.
         Args:
@@ -29,6 +29,7 @@ class GPTResearcher:
         self.source_urls = source_urls
         self.memory = Memory()
         self.visited_urls = set()
+        self.task_type = task_type
 
     async def run(self):
         """
@@ -41,11 +42,14 @@ class GPTResearcher:
         self.agent, self.role = await choose_agent(self.query, self.cfg)
         await stream_output("logs", self.agent, self.websocket)
 
-        # If specified, the researcher will use the given urls as the context for the research.
-        if self.source_urls:
-            self.context = await self.get_context_by_urls(self.source_urls)
+        if self.task_type == 'research':
+            # If specified, the researcher will use the given urls as the context for the research.
+            if self.source_urls:
+                self.context = await self.get_context_by_urls(self.source_urls)
+            else:
+                self.context = await self.get_context_by_search(self.query)
         else:
-            self.context = await self.get_context_by_search(self.query)
+            self.context = await self.get_context_by_custom_search(self.query)
 
         # Write Research Report
         if self.report_type == "custom_report":
@@ -71,6 +75,30 @@ class GPTResearcher:
     async def get_context_by_search(self, query):
         """
            Generates the context for the research task by searching the query and scraping the results
+        Returns:
+            context: List of context
+        """
+        context = []
+        # Generate Sub-Queries including original query
+        sub_queries = await get_sub_queries(query, self.role, self.cfg) + [query]
+        await stream_output("logs",
+                            f"🧠 I will conduct my research based on the following queries: {sub_queries}...",
+                            self.websocket)
+
+        # Run Sub-Queries
+        for sub_query in sub_queries:
+            await stream_output("logs", f"\n🔎 Running research for '{sub_query}'...", self.websocket)
+            scraped_sites = await self.scrape_sites_by_query(sub_query)
+            content = await self.get_similar_content_by_query(sub_query, scraped_sites)
+            await stream_output("logs", f"📃 {content}", self.websocket)
+            context.append(content)
+
+        return context
+
+    async def get_context_by_custom_search(self, query):
+        """
+           Generates the context for the research task by searching the query
+           and scraping the results
         Returns:
             context: List of context
         """
